@@ -23,33 +23,34 @@ class CentralSystem(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         self.tasks = []  # Lista de tareas pendientes
-        self.robot_statuses = {}  # Estado de cada robot (Libre/Ocupado)
-        self.battery = 34;
+        #self.robot_statuses = {}  # Estado de cada robot (Libre/Ocupado)
+        self.battery = 0;
+    
+    def add_task(self, task):
+        self.tasks.append(task)
 
     def step(self):
         # Asignar tareas a los robots libres
         for bot in self.model.schedule.agents:
             if isinstance(bot, Bot):
+                #aqui agregar condicion de a cual robot asignar la tarea
                 if self.tasks:
                     task = self.tasks.pop(0)
                     bot.receive_task(task)
                     #self.robot_statuses[robot.unique_id] = "Busy"
 
-    def add_task(self, task):
-        self.tasks.append(task)
+    
 
-    def report_completion(self, robot_id):
-        self.robot_statuses[robot_id] = "Free"
+    #ciclo iterar sobre agentes, ver distancia al paquete, al más cercano asignar tarea.
+
 
 class Bot(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         self.next_pos = None
-        self.luck = np.random.uniform(0.2, 1.0)
         self.movements = 0
         self.battery = 1000 #np.random.randint(75, 100)
         self.path = []
-        
         self.carry = False
         self.tasks = []
         self.goal = None;
@@ -62,14 +63,7 @@ class Bot(Agent):
     def manhattan_heuristic(self, pos, goal):
         return abs(pos[0] - goal[0]) + abs(pos[1] - goal[1])
     
-    def at_box(self):
-        # Implementar lógica para verificar si se alcanzó el objetivo
-        return False
-    
-    def at_exit(self):
-        # Implementar lógica para verificar si se alcanzó el objetivo
-        return True;
-
+    #en base a este, agregar para calcular distancia al paquete.
     def find_exit(self):
         # Encontrar la posición de la salida ('S') en el grid
         for pos in self.model.grid.coord_iter():
@@ -208,23 +202,23 @@ class Environment(Model):
         # Example of manual placement for a 20x20 grid, maze-like environment
         desc = ['BBBBBBBBBBBBBBBBBBBB',
                 'BMMMMMMMFFFFFFFFFFFB',
+                'BFFFFFFFFFFFFFMFFFFB',
+                'BFFFFFFFFFFMFFFFFFFB',
+                'BFFFMFFFFFFFFFFFFFFB',
+                'BFFFFFFFFFFFFMFFFFFB',
                 'BFFFFFFFFFFFFFFFFFFB',
-                'BFFFFFFFFFFFFFFFFFFB',
-                'BFFFFFFFFFFFFFFFFFFB',
-                'BFFFFFFFFFFFFFFFFFFB',
-                'BFFFFFFFFFFFFFFFFFFB',
-                'BFFFFFFFFFFFFFFFFFFB',
+                'BFFFMFFFFFFFFFMFFFFB',
                 'BFFFFFFFFFFFFFFFFFFB',
                 'BFRFFFFFFFBBBBBBBBBB',
-                'BFFFFFFFFFFFFFFFFFFB',
-                'BFFFFFFFFFFFFFFFFFFB',
-                'BFFFFFFFFFFFFFFFFFFB',
+                'BFFMFFFFFFFFFFFFFFFB',
+                'BFFFFFFFFFFFFmFFFFFB',
+                'BFFFFFFMFFFFFFFFMFFB',
                 'BFFFFFFFFFFFFFFFFFFB',
                 'BFFFFFFFFFFFFFFFFFFB',
                 'BBBBBBBBBBBFFFFFFFFB',
                 'BFFFFFFFFFFFFFFFFFFB',
-                'BFFFFFFFFFFFFFFFFFFB',
-                'BFFFFFFFFFFFFFFFFFSB',
+                'BFFFFFFFFFFFFFMFFFFB',
+                'BFFFFFFMFFFFFFFFFFSB',
                 'BBBBBBBBBBBBBBBBBBBB']
 
         self._manual_placement(desc)
@@ -248,7 +242,7 @@ class Environment(Model):
     def _manual_placement(self, desc: list):
 
         box_positions = []
-        goal_position = (0,0)
+        goal_position = None
         
         M, N = self.grid.height, self.grid.width
 
